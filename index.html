@@ -18,7 +18,6 @@
       font-family: 'Playfair Display', serif;
     }
 
-    /* GRADIENTE DOURADO METÁLICO PREMUM */
     .gold-gradient-text {
       background: linear-gradient(135deg, #d4af37 0%, #fff3a7 30%, #aa771c 70%, #fef198 100%);
       -webkit-background-clip: text;
@@ -403,7 +402,6 @@
       return lista;
     }
 
-    // 2 CLIQUES PARA ABRIR O PROMPT DA SENHA DO PROPRIETÁRIO
     function acessoSecreto() {
       toquesLogo++;
       if (toquesLogo === 2) {
@@ -626,7 +624,6 @@
 
       atualizarHorariosDisponiveis();
 
-      // MENSAGEM LIMPA DO WHATSAPP (SEM O TEXTO DOS 10 MINUTOS)
       const msg = `🔥 *NOVO AGENDAMENTO - HM BARBER STORE*%0A%0A` +
         `👤 *Cliente:* ${nome}%0A` +
         `📱 *WhatsApp:* ${tel}%0A` +
@@ -681,7 +678,7 @@
       document.getElementById('total-debito').innerText = `R$ ${totalDebito},00`;
       document.getElementById('total-credito').innerText = `R$ ${totalCredito},00`;
 
-      // TABELA
+      // TABELA COM OPÇÃO DE EDITAR A QUALQUER MOMENTO
       const tbody = document.getElementById('tabela-agendamentos');
       tbody.innerHTML = agendamentos.map(a => `
         <tr class="${a.status === 'Cancelado' ? 'opacity-40 line-through' : ''}">
@@ -701,7 +698,9 @@
             ${a.status === 'Pendente' ? `
               <button onclick="concluirComPagamento(${a.id})" class="gold-button px-2 py-1 rounded text-[10px] font-black">Concluir</button>
               <button onclick="cancelarAgendamento(${a.id})" class="bg-red-900/60 text-red-300 px-2 py-1 rounded text-[10px] font-bold">Cancelar</button>
-            ` : '-'}
+            ` : `
+              <button onclick="editarAgendamento(${a.id})" class="bg-emerald-950 text-emerald-400 border border-emerald-800 px-2 py-1 rounded text-[10px] font-bold">Editar</button>
+            `}
           </td>
         </tr>
       `).join('');
@@ -720,9 +719,32 @@
       atualizarHorariosDisponiveis();
     }
 
+    // NOVA FUNÇÃO: PERMITE ALTERAR O STATUS E O PAGAMENTO A QUALQUER MOMENTO
+    function editarAgendamento(id) {
+      const opcao = prompt('O que deseja fazer com este agendamento?\n1 - Alterar Pagamento para PIX\n2 - Alterar Pagamento para DINHEIRO\n3 - Alterar Pagamento para DÉBITO\n4 - Alterar Pagamento para CRÉDITO\n5 - Reverter para PENDENTE\n6 - CANCELAR Agendamento', '1');
+      
+      if (!opcao) return;
+
+      agendamentos = agendamentos.map(a => {
+        if (a.id === id) {
+          if (opcao === '1') return { ...a, status: 'Concluído', pagamento: 'Pix' };
+          if (opcao === '2') return { ...a, status: 'Concluído', pagamento: 'Dinheiro' };
+          if (opcao === '3') return { ...a, status: 'Concluído', pagamento: 'Débito' };
+          if (opcao === '4') return { ...a, status: 'Concluído', pagamento: 'Crédito' };
+          if (opcao === '5') return { ...a, status: 'Pendente', pagamento: '-' };
+          if (opcao === '6') return { ...a, status: 'Cancelado', pagamento: '-' };
+        }
+        return a;
+      });
+
+      localStorage.setItem('hm_agendamentos', JSON.stringify(agendamentos));
+      atualizarPainelLoja();
+      atualizarHorariosDisponiveis();
+    }
+
     function cancelarAgendamento(id) {
       if (confirm('Deseja cancelar este agendamento? O horário será liberado.')) {
-        agendamentos = agendamentos.map(a => a.id === id ? {...a, status: 'Cancelado'} : a);
+        agendamentos = agendamentos.map(a => a.id === id ? {...a, status: 'Cancelado', pagamento: '-'} : a);
         localStorage.setItem('hm_agendamentos', JSON.stringify(agendamentos));
         atualizarPainelLoja();
         atualizarHorariosDisponiveis();
