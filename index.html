@@ -184,13 +184,14 @@
       </button>
     </div>
 
+    <!-- MÉTRICAS -->
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
       <div class="card-street p-4 rounded-2xl">
         <p class="text-[10px] font-bold text-gray-400 uppercase">Cortes Concluídos</p>
         <p class="font-brand text-2xl font-black gold-gradient-text mt-1" id="metrica-atendimentos">0</p>
       </div>
       <div class="card-street p-4 rounded-2xl">
-        <p class="text-[10px] font-bold text-gray-400 uppercase">Faturamento</p>
+        <p class="text-[10px] font-bold text-gray-400 uppercase">Faturamento Total</p>
         <p class="font-brand text-2xl font-black text-emerald-400 mt-1" id="metrica-faturamento">R$ 0,00</p>
       </div>
       <div class="card-street p-4 rounded-2xl">
@@ -199,8 +200,9 @@
       </div>
     </div>
 
-    <section class="card-street rounded-2xl p-4">
-      <h3 class="font-brand text-xs font-bold gold-gradient-text mb-4 uppercase">Lista de Agendamentos</h3>
+    <!-- TABELA DE AGENDAMENTOS -->
+    <section class="card-street rounded-2xl p-4 space-y-3">
+      <h3 class="font-brand text-xs font-bold gold-gradient-text uppercase">Lista de Agendamentos</h3>
       <div class="overflow-x-auto">
         <table class="w-full text-left text-xs">
           <thead>
@@ -209,28 +211,41 @@
               <th class="p-2">Barbeiro</th>
               <th class="p-2">Data/Hora</th>
               <th class="p-2">Valor</th>
+              <th class="p-2">Pagamento</th>
               <th class="p-2">Status</th>
-              <th class="p-2">Ação</th>
+              <th class="p-2">Ações</th>
             </tr>
           </thead>
           <tbody id="tabela-agendamentos" class="divide-y divide-emerald-950/60"></tbody>
         </table>
       </div>
     </section>
+
+    <!-- GESTÃO DE SERVIÇOS & PREÇOS (ALTERAÇÕES EM TEMPO REAL) -->
+    <section class="card-street rounded-2xl p-4 space-y-4">
+      <div class="flex justify-between items-center">
+        <h3 class="font-brand text-xs font-bold gold-gradient-text uppercase">Gestão de Serviços & Preços (Final de Ano / Reajuste)</h3>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" id="gestao-servicos-lista"></div>
+    </section>
+
   </main>
 
   <script>
-    const SERVICOS = [
-      { id: '1', nome: 'Corte e Barba', preco: 70, duracao: 'Aprox. 1h' },
-      { id: '2', nome: 'Corte', preco: 40, duracao: 'Aprox. 40 min' },
-      { id: '3', nome: 'Corte e Sobrancelha', preco: 45, duracao: 'Aprox. 45 min' },
-      { id: '4', nome: 'Barba', preco: 30, duracao: 'Aprox. 30 min' },
-      { id: '5', nome: 'Corte e Luzes', preco: 85, duracao: 'Aprox. 1h' },
-      { id: '6', nome: 'Corte e Alisamento', preco: 70, duracao: 'Aprox. 50 min' },
-      { id: '7', nome: 'Pezinho', preco: 15, duracao: 'Aprox. 10 min' },
-      { id: '8', nome: 'Sobrancelha', preco: 10, duracao: 'Aprox. 10 min' },
-      { id: '9', nome: 'Corte Penteado', preco: 65, duracao: 'Aprox. 1h' }
+    // LISTA DE SERVIÇOS PADRÃO (CARREGADA DO LOCALSTORAGE SE EXISTIR)
+    const SERVICOS_DEFAULT = [
+      { id: '1', nome: 'Corte e Barba', preco: 70, duracao: 'Aprox. 1h', ativo: true },
+      { id: '2', nome: 'Corte', preco: 40, duracao: 'Aprox. 40 min', ativo: true },
+      { id: '3', nome: 'Corte e Sobrancelha', preco: 45, duracao: 'Aprox. 45 min', ativo: true },
+      { id: '4', nome: 'Barba', preco: 30, duracao: 'Aprox. 30 min', ativo: true },
+      { id: '5', nome: 'Corte e Luzes', preco: 85, duracao: 'Aprox. 1h', ativo: true },
+      { id: '6', nome: 'Corte e Alisamento', preco: 70, duracao: 'Aprox. 50 min', ativo: true },
+      { id: '7', nome: 'Pezinho', preco: 15, duracao: 'Aprox. 10 min', ativo: true },
+      { id: '8', nome: 'Sobrancelha', preco: 10, duracao: 'Aprox. 10 min', ativo: true },
+      { id: '9', nome: 'Corte Penteado', preco: 65, duracao: 'Aprox. 1h', ativo: true }
     ];
+
+    let SERVICOS = JSON.parse(localStorage.getItem('hm_servicos') || JSON.stringify(SERVICOS_DEFAULT));
 
     const BARBEIROS = [
       { id: 'qualquer', nome: 'Sem Preferência' },
@@ -262,6 +277,7 @@
           document.getElementById('view-cliente').classList.add('hidden');
           document.getElementById('view-loja').classList.remove('hidden');
           atualizarPainelLoja();
+          renderGestaoServicos();
         } else if (pass !== null) {
           alert('Palavra-passe incorreta!');
         }
@@ -271,11 +287,14 @@
     function sairPainel() {
       document.getElementById('view-cliente').classList.remove('hidden');
       document.getElementById('view-loja').classList.add('hidden');
+      renderServicos();
     }
 
     function renderServicos() {
       const el = document.getElementById('lista-servicos');
-      el.innerHTML = SERVICOS.map(s => `
+      const ativos = SERVICOS.filter(s => s.ativo !== false);
+      
+      el.innerHTML = ativos.map(s => `
         <div onclick="toggleServico('${s.id}')" id="srv-${s.id}" class="card-street p-3.5 rounded-2xl flex justify-between items-center cursor-pointer">
           <div>
             <p class="font-extrabold text-xs text-white uppercase tracking-wider">${s.nome}</p>
@@ -295,10 +314,12 @@
       
       SERVICOS.forEach(s => {
         const card = document.getElementById(`srv-${s.id}`);
-        if (servicosSelecionados.includes(s.id)) {
-          card.classList.add('card-street-active');
-        } else {
-          card.classList.remove('card-street-active');
+        if (card) {
+          if (servicosSelecionados.includes(s.id)) {
+            card.classList.add('card-street-active');
+          } else {
+            card.classList.remove('card-street-active');
+          }
         }
       });
       calcularTotal();
@@ -408,6 +429,7 @@
         data: data,
         horario: horarioSelecionado,
         valor: valorTotal,
+        pagamento: '-',
         status: 'Pendente'
       };
 
@@ -425,6 +447,7 @@
       window.open(`https://wa.me/5511999999999?text=${msg}`, '_blank');
     }
 
+    /* LÓGICA DO PAINEL DE CONTROLE (DONO) */
     function atualizarPainelLoja() {
       const concluidos = agendamentos.filter(a => a.status === 'Concluído');
       const faturamento = concluidos.reduce((acc, a) => acc + a.valor, 0);
@@ -437,24 +460,87 @@
 
       const tbody = document.getElementById('tabela-agendamentos');
       tbody.innerHTML = agendamentos.map(a => `
-        <tr>
+        <tr class="${a.status === 'Cancelado' ? 'opacity-40 line-through' : ''}">
           <td class="p-2 font-bold">${a.cliente}</td>
           <td class="p-2">${a.barbeiro}</td>
           <td class="p-2">${a.data} ${a.horario}</td>
           <td class="p-2 font-bold text-amber-400">R$ ${a.valor}</td>
-          <td class="p-2"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${a.status === 'Concluído' ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-amber-950 text-amber-400 border border-amber-800'}">${a.status}</span></td>
+          <td class="p-2 font-bold text-gray-300">${a.pagamento}</td>
           <td class="p-2">
-            ${a.status !== 'Concluído' ? `<button onclick="concluirAgendamento(${a.id})" class="gold-button px-2 py-1 rounded text-[10px] font-black">Concluir</button>` : '-'}
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold ${
+              a.status === 'Concluído' ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' :
+              a.status === 'Cancelado' ? 'bg-red-950 text-red-400 border border-red-800' :
+              'bg-amber-950 text-amber-400 border border-amber-800'
+            }">${a.status}</span>
+          </td>
+          <td class="p-2 flex gap-1">
+            ${a.status === 'Pendente' ? `
+              <button onclick="concluirComPagamento(${a.id})" class="gold-button px-2 py-1 rounded text-[10px] font-black">Concluir</button>
+              <button onclick="cancelarAgendamento(${a.id})" class="bg-red-900/60 text-red-300 px-2 py-1 rounded text-[10px] font-bold">Cancelar</button>
+            ` : '-'}
           </td>
         </tr>
       `).join('');
     }
 
-    function concluirAgendamento(id) {
-      agendamentos = agendamentos.map(a => a.id === id ? {...a, status: 'Concluído'} : a);
+    function concluirComPagamento(id) {
+      const forma = prompt('Qual foi a forma de pagamento?\n1 - Pix\n2 - Dinheiro\n3 - Cartão Débito\n4 - Cartão Crédito', '1');
+      let pagamentoTexto = 'Pix';
+      if (forma === '2') pagamentoTexto = 'Dinheiro';
+      if (forma === '3') pagamentoTexto = 'Débito';
+      if (forma === '4') pagamentoTexto = 'Crédito';
+
+      agendamentos = agendamentos.map(a => a.id === id ? {...a, status: 'Concluído', pagamento: pagamentoTexto} : a);
       localStorage.setItem('hm_agendamentos', JSON.stringify(agendamentos));
       atualizarPainelLoja();
       atualizarHorariosDisponiveis();
+    }
+
+    function cancelarAgendamento(id) {
+      if (confirm('Deseja realmente cancelar este agendamento? O horário será liberado novamente.')) {
+        agendamentos = agendamentos.map(a => a.id === id ? {...a, status: 'Cancelado'} : a);
+        localStorage.setItem('hm_agendamentos', JSON.stringify(agendamentos));
+        atualizarPainelLoja();
+        atualizarHorariosDisponiveis();
+      }
+    }
+
+    /* GESTÃO DE SERVIÇOS & ALTERAÇÃO DE PREÇOS */
+    function renderGestaoServicos() {
+      const el = document.getElementById('gestao-servicos-lista');
+      el.innerHTML = SERVICOS.map(s => `
+        <div class="bg-black/50 border border-amber-500/20 p-3 rounded-xl flex justify-between items-center">
+          <div>
+            <p class="font-bold text-xs text-white">${s.nome}</p>
+            <p class="text-[10px] text-gray-400">Preço atual: <span class="text-amber-400 font-bold">R$ ${s.preco},00</span></p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="alterarPrecoServico('${s.id}')" class="text-[10px] gold-button px-2.5 py-1 rounded-lg font-bold">Alterar R$</button>
+            <button onclick="toggleAtivoServico('${s.id}')" class="text-[10px] ${s.ativo !== false ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-gray-800 text-gray-500'} px-2 py-1 rounded-lg font-bold">
+              ${s.ativo !== false ? 'Ativo' : 'Oculto'}
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function alterarPrecoServico(id) {
+      const s = SERVICOS.find(item => item.id === id);
+      const novoPreco = prompt(`Novo preço para ${s.nome} (Apenas número):`, s.preco);
+      if (novoPreco && !isNaN(novoPreco)) {
+        s.preco = parseFloat(novoPreco);
+        localStorage.setItem('hm_servicos', JSON.stringify(SERVICOS));
+        renderGestaoServicos();
+        renderServicos();
+      }
+    }
+
+    function toggleAtivoServico(id) {
+      const s = SERVICOS.find(item => item.id === id);
+      s.ativo = s.ativo === false ? true : false;
+      localStorage.setItem('hm_servicos', JSON.stringify(SERVICOS));
+      renderGestaoServicos();
+      renderServicos();
     }
   </script>
 </body>
