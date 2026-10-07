@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HM Barber Store - Agendamento</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    :root {
+      --bg-green: #0d2218;
+      --card-green: #143324;
+      --gold: #d4af37;
+      --gold-light: #f3e5ab;
+    }
+    body {
+      background-color: var(--bg-green);
+      color: #ffffff;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+    .text-gold { color: var(--gold); }
+    .bg-gold { background-color: var(--gold); }
+    .border-gold { border-color: var(--gold); }
+    .bg-card { background-color: var(--card-green); }
+  </style>
+</head>
+<body class="min-h-screen pb-12">
+
+  <!-- CABEÇALHO -->
+  <header class="border-b border-yellow-600/30 bg-black/30 p-4 sticky top-0 backdrop-blur-md z-50">
+    <div class="max-w-md mx-auto flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-12 h-12 rounded-full border-2 border-gold flex items-center justify-center font-bold text-gold bg-black/50 text-xl">
+          HM
+        </div>
+        <div>
+          <h1 class="font-bold text-lg text-gold tracking-wider">HM BARBER STORE</h1>
+          <p class="text-xs text-emerald-300/70">Estilo e Tradição</p>
+        </div>
+      </div>
+      <button onclick="alternarAba()" id="btn-aba" class="text-xs bg-gold/20 border border-gold text-gold px-3 py-1.5 rounded-lg font-semibold">
+        Painel Loja
+      </button>
+    </div>
+  </header>
+
+  <!-- VISÃO DO CLIENTE (MOBILE) -->
+  <main id="view-cliente" class="max-w-md mx-auto p-4 space-y-6">
+    <div class="text-center py-2">
+      <h2 class="text-2xl font-extrabold text-gold">Agende seu Corte em Minutos</h2>
+      <p class="text-xs text-emerald-200/80">Escolha os serviços e o melhor horário para si</p>
+    </div>
+
+    <!-- PASSO 1: SERVIÇOS -->
+    <section class="space-y-3">
+      <h3 class="text-sm font-bold text-gold uppercase tracking-wider flex items-center gap-2">
+        <span>1. Selecione os Serviços</span>
+      </h3>
+      <div class="grid grid-cols-1 gap-2.5" id="lista-servicos"></div>
+    </section>
+
+    <!-- PASSO 2: BARBEIRO -->
+    <section class="space-y-3">
+      <h3 class="text-sm font-bold text-gold uppercase tracking-wider">2. Escolha o Profissional</h3>
+      <div class="grid grid-cols-2 gap-2" id="lista-barbeiros"></div>
+    </section>
+
+    <!-- PASSO 3: DATA E HORÁRIO -->
+    <section class="space-y-3">
+      <h3 class="text-sm font-bold text-gold uppercase tracking-wider">3. Data e Horário</h3>
+      <input type="date" id="select-data" class="w-full bg-card border border-yellow-600/40 rounded-xl p-3 text-white text-sm focus:outline-none focus:border-gold">
+      <div class="grid grid-cols-3 gap-2 pt-2" id="lista-horarios"></div>
+    </section>
+
+    <!-- PASSO 4: SEUS DADOS -->
+    <section class="space-y-3">
+      <h3 class="text-sm font-bold text-gold uppercase tracking-wider">4. Finalizar Agendamento</h3>
+      <div class="bg-card p-4 rounded-xl border border-yellow-600/30 space-y-3">
+        <div>
+          <label class="text-xs text-gray-300 block mb-1">Seu Nome Completo</label>
+          <input type="text" id="nome-cliente" placeholder="Ex: João Silva" class="w-full bg-black/40 border border-emerald-800 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-gold">
+        </div>
+        <div>
+          <label class="text-xs text-gray-300 block mb-1">Seu Telefone / WhatsApp</label>
+          <input type="tel" id="tel-cliente" placeholder="(00) 00000-0000" class="w-full bg-black/40 border border-emerald-800 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-gold">
+        </div>
+        
+        <div class="border-t border-emerald-800/60 pt-3 mt-2 flex justify-between items-center text-sm">
+          <span class="text-gray-300">Total Estimado:</span>
+          <span class="font-bold text-gold text-base" id="total-valor">R$ 0,00</span>
+        </div>
+
+        <button onclick="enviarAgendamento()" class="w-full bg-gold hover:bg-yellow-500 text-black font-bold py-3.5 rounded-xl shadow-lg transition flex items-center justify-center gap-2 mt-2">
+          <span>CONFIRMAR VIA WHATSAPP</span>
+        </button>
+      </div>
+    </section>
+  </main>
+
+  <!-- PAINEL DA LOJA (GESTAO) -->
+  <main id="view-loja" class="max-w-4xl mx-auto p-4 space-y-6 hidden">
+    <div class="flex justify-between items-center border-b border-yellow-600/30 pb-4">
+      <div>
+        <h2 class="text-xl font-bold text-gold">Painel de Gestão - HM Barber Store</h2>
+        <p class="text-xs text-gray-300">Acompanhamento de métricas e agendamentos</p>
+      </div>
+    </div>
+
+    <!-- CARDS DE MÉTRICAS -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div class="bg-card border border-yellow-600/30 p-4 rounded-xl">
+        <p class="text-xs text-gray-400">Total Atendimentos</p>
+        <p class="text-2xl font-bold text-gold" id="metrica-atendimentos">0</p>
+      </div>
+      <div class="bg-card border border-yellow-600/30 p-4 rounded-xl">
+        <p class="text-xs text-gray-400">Faturamento Total</p>
+        <p class="text-2xl font-bold text-emerald-400" id="metrica-faturamento">R$ 0,00</p>
+      </div>
+      <div class="bg-card border border-yellow-600/30 p-4 rounded-xl">
+        <p class="text-xs text-gray-400">Ticket Médio</p>
+        <p class="text-2xl font-bold text-gold" id="metrica-ticket">R$ 0,00</p>
+      </div>
+    </div>
+
+    <!-- DESEMPENHO POR BARBEIRO -->
+    <section class="bg-card border border-yellow-600/30 rounded-xl p-4">
+      <h3 class="text-sm font-bold text-gold mb-3 uppercase">Atendimentos por Profissional</h3>
+      <div class="space-y-3" id="relatorio-barbeiros"></div>
+    </section>
+
+    <!-- LISTA DE AGENDAMENTOS -->
+    <section class="bg-card border border-yellow-600/30 rounded-xl p-4">
+      <h3 class="text-sm font-bold text-gold mb-3 uppercase">Agendamentos Registados</h3>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead>
+            <tr class="border-b border-emerald-800 text-gold">
+              <th class="p-2">Cliente</th>
+              <th class="p-2">Barbeiro</th>
+              <th class="p-2">Data/Hora</th>
+              <th class="p-2">Valor</th>
+              <th class="p-2">Status</th>
+              <th class="p-2">Ação</th>
+            </tr>
+          </thead>
+          <tbody id="tabela-agendamentos" class="divide-y divide-emerald-900/40"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // DADOS INICIAIS
+    const SERVICOS = [
+      { id: '1', nome: 'Corte Tradicional', preco: 60, duracao: 45 },
+      { id: '2', nome: 'Barba Completa', preco: 45, duracao: 30 },
+      { id: '3', nome: 'Cabelo & Barba', preco: 90, duracao: 60 },
+      { id: '4', nome: 'Corte com Pigmentação', preco: 85, duracao: 50 }
+    ];
+
+    const BARBEIROS = [
+      { id: 'qualquer', nome: 'Primeiro Disponível' },
+      { id: 'carlos', nome: 'Carlos (Especialista)' },
+      { id: 'pedro', nome: 'Pedro (Sênior)' }
+    ];
+
+    const HORARIOS = ['09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00'];
+
+    let servicosSelecionados = [];
+    let barbeiroSelecionado = 'qualquer';
+    let horarioSelecionado = '';
+    let agendamentos = JSON.parse(localStorage.getItem('hm_agendamentos') || '[]');
+
+    // INICIALIZAÇÃO
+    window.onload = () => {
+      renderServicos();
+      renderBarbeiros();
+      renderHorarios();
+      document.getElementById('select-data').valueAsDate = new Date();
+      atualizarPainelLoja();
+    };
+
+    function renderServicos() {
+      const el = document.getElementById('lista-servicos');
+      el.innerHTML = SERVICOS.map(s => `
+        <div onclick="toggleServico('${s.id}')" id="srv-${s.id}" class="bg-card border border-emerald-800 p-3 rounded-xl flex justify-between items-center cursor-pointer transition">
+          <div>
+            <p class="font-bold text-sm text-white">${s.nome}</p>
+            <p class="text-xs text-gray-400">${s.duracao} min</p>
+          </div>
+          <span class="font-bold text-gold text-sm">R$ ${s.preco},00</span>
+        </div>
+      `).join('');
+    }
+
+    function toggleServico(id) {
+      if (servicosSelecionados.includes(id)) {
+        servicosSelecionados = servicosSelecionados.filter(item => item !== id);
+      } else {
+        servicosSelecionados.push(id);
+      }
+      
+      SERVICOS.forEach(s => {
+        const card = document.getElementById(`srv-${s.id}`);
+        if (servicosSelecionados.includes(s.id)) {
+          card.classList.add('border-gold', 'bg-emerald-900/40');
+        } else {
+          card.classList.remove('border-gold', 'bg-emerald-900/40');
+        }
+      });
+      calcularTotal();
+    }
+
+    function renderBarbeiros() {
+      const el = document.getElementById('lista-barbeiros');
+      el.innerHTML = BARBEIROS.map(b => `
+        <div onclick="selecionarBarbeiro('${b.id}')" id="barb-${b.id}" class="bg-card border border-emerald-800 p-2.5 rounded-xl text-center cursor-pointer text-xs">
+          <p class="font-semibold text-white">${b.nome}</p>
+        </div>
+      `).join('');
+      selecionarBarbeiro('qualquer');
+    }
+
+    function selecionarBarbeiro(id) {
+      barbeiroSelecionado = id;
+      BARBEIROS.forEach(b => {
+        const card = document.getElementById(`barb-${b.id}`);
+        if (b.id === id) {
+          card.classList.add('border-gold', 'bg-emerald-900/40');
+        } else {
+          card.classList.remove('border-gold', 'bg-emerald-900/40');
+        }
+      });
+    }
+
+    function renderHorarios() {
+      const el = document.getElementById('lista-horarios');
+      el.innerHTML = HORARIOS.map(h => `
+        <button onclick="selecionarHorario('${h}')" id="hora-${h}" class="bg-card border border-emerald-800 py-2 rounded-lg text-xs font-semibold hover:border-gold">
+          ${h}
+        </button>
+      `).join('');
+    }
+
+    function selecionarHorario(h) {
+      horarioSelecionado = h;
+      HORARIOS.forEach(hora => {
+        const btn = document.getElementById(`hora-${hora}`);
+        if (hora === h) {
+          btn.classList.add('bg-gold', 'text-black', 'border-gold');
+        } else {
+          btn.classList.remove('bg-gold', 'text-black', 'border-gold');
+        }
+      });
+    }
+
+    function calcularTotal() {
+      const total = servicosSelecionados.reduce((acc, id) => {
+        const s = SERVICOS.find(item => item.id === id);
+        return acc + (s ? s.preco : 0);
+      }, 0);
+      document.getElementById('total-valor').innerText = `R$ ${total},00`;
+      return total;
+    }
+
+    function enviarAgendamento() {
+      const nome = document.getElementById('nome-cliente').value;
+      const tel = document.getElementById('tel-cliente').value;
+      const data = document.getElementById('select-data').value;
+
+      if (!nome || !tel || servicosSelecionados.length === 0 || !horarioSelecionado) {
+        alert('Por favor, preencha todos os campos e selecione pelo menos um serviço e horário.');
+        return;
+      }
+
+      const valorTotal = calcularTotal();
+      const barbeiroObj = BARBEIROS.find(b => b.id === barbeiroSelecionado);
+
+      const novoAgendamento = {
+        id: Date.now(),
+        cliente: nome,
+        telefone: tel,
+        barbeiro: barbeiroObj.nome,
+        data: data,
+        horario: horarioSelecionado,
+        valor: valorTotal,
+        status: 'Pendente'
+      };
+
+      agendamentos.push(novoAgendamento);
+      localStorage.setItem('hm_agendamentos', JSON.stringify(agendamentos));
+      atualizarPainelLoja();
+
+      // MENSAGEM WHATSAPP
+      const msg = `Olá! Gostaria de confirmar meu agendamento na HM Barber Store:%0A%0A` +
+        `👤 *Cliente:* ${nome}%0A` +
+        `💈 *Profissional:* ${barbeiroObj.nome}%0A` +
+        `📅 *Data:* ${data} às ${horarioSelecionado}%0A` +
+        `💰 *Valor Total:* R$ ${valorTotal},00`;
+
+      window.open(`https://wa.me/5511999999999?text=${msg}`, '_blank');
+    }
+
+    // NAVEGAÇÃO E PAINEL
+    function alternarAba() {
+      const vCliente = document.getElementById('view-cliente');
+      const vLoja = document.getElementById('view-loja');
+      const btn = document.getElementById('btn-aba');
+
+      if (vCliente.classList.contains('hidden')) {
+        vCliente.classList.remove('hidden');
+        vLoja.classList.add('hidden');
+        btn.innerText = 'Painel Loja';
+      } else {
+        vCliente.classList.add('hidden');
+        vLoja.classList.remove('hidden');
+        btn.innerText = 'Ver Site Mobile';
+        atualizarPainelLoja();
+      }
+    }
+
+    function atualizarPainelLoja() {
+      const concluidos = agendamentos.filter(a => a.status === 'Concluído');
+      const faturamento = concluidos.reduce((acc, a) => acc + a.valor, 0);
+      const totalAtend = concluidos.length;
+      const ticket = totalAtend > 0 ? (faturamento / totalAtend).toFixed(2) : 0;
+
+      document.getElementById('metrica-atendimentos').innerText = totalAtend;
+      document.getElementById('metrica-faturamento').innerText = `R$ ${faturamento},00`;
+      document.getElementById('metrica-ticket').innerText = `R$ ${ticket}`;
+
+      // TABELA
+      const tbody = document.getElementById('tabela-agendamentos');
+      tbody.innerHTML = agendamentos.map(a => `
+        <tr>
+          <td class="p-2">${a.cliente}</td>
+          <td class="p-2">${a.barbeiro}</td>
+          <td class="p-2">${a.data} ${a.horario}</td>
+          <td class="p-2">R$ ${a.valor}</td>
+          <td class="p-2"><span class="px-2 py-0.5 rounded text-[10px] ${a.status === 'Concluído' ? 'bg-green-900 text-green-300' : 'bg-yellow-900 text-yellow-300'}">${a.status}</span></td>
+          <td class="p-2">
+            ${a.status !== 'Concluído' ? `<button onclick="concluirAgendamento(${a.id})" class="bg-gold text-black px-2 py-1 rounded text-[10px] font-bold">Concluir</button>` : '-'}
+          </td>
+        </tr>
+      `).join('');
+
+      // RELATÓRIO
+      const rel = document.getElementById('relatorio-barbeiros');
+      rel.innerHTML = BARBEIROS.filter(b => b.id !== 'qualquer').map(b => {
+        const cortes = concluidos.filter(a => a.barbeiro === b.nome).length;
+        return `
+          <div class="flex justify-between items-center text-xs border-b border-emerald-900/40 pb-2">
+            <span>${b.nome}</span>
+            <span class="font-bold text-gold">${cortes} atendimentos</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function concluirAgendamento(id) {
+      agendamentos = agendamentos.map(a => a.id === id ? {...a, status: 'Concluído'} : a);
+      localStorage.setItem('hm_agendamentos', JSON.stringify(agendamentos));
+      atualizarPainelLoja();
+    }
+  </script>
+</body>
+</html>
