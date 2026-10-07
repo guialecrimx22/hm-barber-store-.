@@ -141,10 +141,10 @@
     <section class="space-y-3">
       <div class="flex justify-between items-center">
         <h2 class="font-brand text-xs font-bold text-white uppercase tracking-widest">3. Data & Horários</h2>
-        <span class="text-[10px] text-gray-400">Verifique a disponibilidade</span>
+        <span class="text-[10px] text-gray-400">Intervalos de 30 min</span>
       </div>
       <input type="date" id="select-data" onchange="atualizarHorariosDisponiveis()" class="w-full card-street rounded-2xl p-3.5 text-white text-xs font-bold focus:outline-none border-amber-500/30">
-      <div class="grid grid-cols-3 gap-2 pt-1" id="lista-horarios"></div>
+      <div class="grid grid-cols-4 gap-2 pt-1" id="lista-horarios"></div>
     </section>
 
     <section class="space-y-3">
@@ -171,6 +171,31 @@
     </section>
 
   </main>
+
+  <!-- MODAL DE AGRADECIMENTO FORMAL -->
+  <div id="modal-agradecimento" class="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-4 hidden">
+    <div class="card-street p-6 rounded-3xl max-w-sm w-full text-center space-y-4 border border-amber-500/40 shadow-2xl">
+      <div class="w-16 h-16 mx-auto rounded-full logo-container flex items-center justify-center p-2">
+        <svg viewBox="0 0 100 100" class="w-full h-full">
+          <circle cx="50" cy="50" r="46" fill="none" stroke="#d4af37" stroke-width="2.5"/>
+          <text x="50" y="46" font-family="'Playfair Display', serif" font-weight="700" font-size="32" fill="url(#goldGrad)" text-anchor="middle">HM</text>
+          <line x1="15" y1="56" x2="85" y2="56" stroke="#d4af37" stroke-width="2"/>
+          <text x="50" y="71" font-family="'Playfair Display', serif" font-weight="700" font-size="9.5" fill="url(#goldGrad)" text-anchor="middle" letter-spacing="1">BARBER STORE</text>
+        </svg>
+      </div>
+      <h3 class="font-brand text-xl font-bold gold-gradient-text">Agendamento Realizado!</h3>
+      <p class="text-xs text-gray-200 leading-relaxed font-medium">
+        A <strong class="gold-gradient-text">HM BARBER STORE</strong> agradece a preferência e a sua confiança no nosso trabalho!
+      </p>
+      <div class="bg-emerald-950/60 border border-emerald-800/60 p-3 rounded-2xl text-[11px] text-emerald-300 font-semibold leading-snug">
+        ⏱️ <strong>Aviso Importante:</strong> Pedimos a gentileza de chegar com <strong>10 minutos de antecedência</strong> ao seu horário agendado.
+      </div>
+      <p class="text-[10px] text-gray-400">Você será redirecionado ao WhatsApp para confirmar o seu horário.</p>
+      <button onclick="fecharModalEIrParaWhatsapp()" class="w-full gold-button font-brand font-extrabold py-3 rounded-xl uppercase text-xs tracking-wider">
+        OK, CONTINUAR PARA WHATSAPP
+      </button>
+    </div>
+  </div>
 
   <!-- PAINEL PRIVADO DA LOJA -->
   <main id="view-loja" class="max-w-4xl mx-auto p-5 space-y-6 hidden">
@@ -200,6 +225,22 @@
       </div>
     </div>
 
+    <!-- CONFIGURAÇÃO DE HORÁRIOS DA BARBEARIA -->
+    <section class="card-street rounded-2xl p-4 space-y-3">
+      <h3 class="font-brand text-xs font-bold gold-gradient-text uppercase">Configuração de Horário de Atendimento</h3>
+      <div class="flex gap-4 items-center">
+        <div>
+          <label class="text-[10px] text-gray-400 block font-bold">Abertura (Hora)</label>
+          <input type="number" id="hora-inicio" min="0" max="23" value="8" class="bg-black/60 border border-emerald-900/60 rounded-xl p-2 text-xs text-white w-20">
+        </div>
+        <div>
+          <label class="text-[10px] text-gray-400 block font-bold">Fechamento (Hora)</label>
+          <input type="number" id="hora-fim" min="0" max="23" value="22" class="bg-black/60 border border-emerald-900/60 rounded-xl p-2 text-xs text-white w-20">
+        </div>
+        <button onclick="salvarConfigHorarios()" class="gold-button px-4 py-2 rounded-xl text-xs font-bold mt-4">Salvar Horários</button>
+      </div>
+    </section>
+
     <!-- TABELA DE AGENDAMENTOS -->
     <section class="card-street rounded-2xl p-4 space-y-3">
       <h3 class="font-brand text-xs font-bold gold-gradient-text uppercase">Lista de Agendamentos</h3>
@@ -210,6 +251,7 @@
               <th class="p-2">Cliente</th>
               <th class="p-2">Barbeiro</th>
               <th class="p-2">Data/Hora</th>
+              <th class="p-2">Duração</th>
               <th class="p-2">Valor</th>
               <th class="p-2">Pagamento</th>
               <th class="p-2">Status</th>
@@ -221,10 +263,10 @@
       </div>
     </section>
 
-    <!-- GESTÃO DE SERVIÇOS & PREÇOS (ALTERAÇÕES EM TEMPO REAL) -->
+    <!-- GESTÃO DE SERVIÇOS & PREÇOS -->
     <section class="card-street rounded-2xl p-4 space-y-4">
       <div class="flex justify-between items-center">
-        <h3 class="font-brand text-xs font-bold gold-gradient-text uppercase">Gestão de Serviços & Preços (Final de Ano / Reajuste)</h3>
+        <h3 class="font-brand text-xs font-bold gold-gradient-text uppercase">Gestão de Serviços & Preços</h3>
       </div>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" id="gestao-servicos-lista"></div>
     </section>
@@ -232,17 +274,16 @@
   </main>
 
   <script>
-    // LISTA DE SERVIÇOS PADRÃO (CARREGADA DO LOCALSTORAGE SE EXISTIR)
     const SERVICOS_DEFAULT = [
-      { id: '1', nome: 'Corte e Barba', preco: 70, duracao: 'Aprox. 1h', ativo: true },
-      { id: '2', nome: 'Corte', preco: 40, duracao: 'Aprox. 40 min', ativo: true },
-      { id: '3', nome: 'Corte e Sobrancelha', preco: 45, duracao: 'Aprox. 45 min', ativo: true },
-      { id: '4', nome: 'Barba', preco: 30, duracao: 'Aprox. 30 min', ativo: true },
-      { id: '5', nome: 'Corte e Luzes', preco: 85, duracao: 'Aprox. 1h', ativo: true },
-      { id: '6', nome: 'Corte e Alisamento', preco: 70, duracao: 'Aprox. 50 min', ativo: true },
-      { id: '7', nome: 'Pezinho', preco: 15, duracao: 'Aprox. 10 min', ativo: true },
-      { id: '8', nome: 'Sobrancelha', preco: 10, duracao: 'Aprox. 10 min', ativo: true },
-      { id: '9', nome: 'Corte Penteado', preco: 65, duracao: 'Aprox. 1h', ativo: true }
+      { id: '1', nome: 'Corte e Barba', preco: 70, duracaoMinutos: 60, duracao: 'Aprox. 1h', ativo: true },
+      { id: '2', nome: 'Corte', preco: 40, duracaoMinutos: 40, duracao: 'Aprox. 40 min', ativo: true },
+      { id: '3', nome: 'Corte e Sobrancelha', preco: 45, duracaoMinutos: 45, duracao: 'Aprox. 45 min', ativo: true },
+      { id: '4', nome: 'Barba', preco: 30, duracaoMinutos: 30, duracao: 'Aprox. 30 min', ativo: true },
+      { id: '5', nome: 'Corte e Luzes', preco: 85, duracaoMinutos: 60, duracao: 'Aprox. 1h', ativo: true },
+      { id: '6', nome: 'Corte e Alisamento', preco: 70, duracaoMinutos: 50, duracao: 'Aprox. 50 min', ativo: true },
+      { id: '7', nome: 'Pezinho', preco: 15, duracaoMinutos: 15, duracao: 'Aprox. 10 min', ativo: true },
+      { id: '8', nome: 'Sobrancelha', preco: 10, duracaoMinutos: 15, duracao: 'Aprox. 10 min', ativo: true },
+      { id: '9', nome: 'Corte Penteado', preco: 65, duracaoMinutos: 60, duracao: 'Aprox. 1h', ativo: true }
     ];
 
     let SERVICOS = JSON.parse(localStorage.getItem('hm_servicos') || JSON.stringify(SERVICOS_DEFAULT));
@@ -253,20 +294,36 @@
       { id: 'bruno', nome: 'Bruno' }
     ];
 
-    const HORARIOS = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00'];
+    let horaInicioAtendimento = parseInt(localStorage.getItem('hm_hora_inicio') || '8');
+    let horaFimAtendimento = parseInt(localStorage.getItem('hm_hora_fim') || '22');
 
     let servicosSelecionados = [];
     let barbeiroSelecionado = 'qualquer';
     let horarioSelecionado = '';
     let agendamentos = JSON.parse(localStorage.getItem('hm_agendamentos') || '[]');
     let toquesLogo = 0;
+    let urlWhatsappPendente = '';
 
     window.onload = () => {
       renderServicos();
       renderBarbeiros();
       document.getElementById('select-data').valueAsDate = new Date();
+      document.getElementById('hora-inicio').value = horaInicioAtendimento;
+      document.getElementById('hora-fim').value = horaFimAtendimento;
       atualizarHorariosDisponiveis();
     };
+
+    function gerarGradeHorarios() {
+      const lista = [];
+      for (let h = horaInicioAtendimento; h <= horaFimAtendimento; h++) {
+        const horaStr = h < 10 ? `0${h}` : `${h}`;
+        lista.push(`${horaStr}:00`);
+        if (h !== horaFimAtendimento) {
+          lista.push(`${horaStr}:30`);
+        }
+      }
+      return lista;
+    }
 
     function acessoSecreto() {
       toquesLogo++;
@@ -290,258 +347,7 @@
       renderServicos();
     }
 
-    function renderServicos() {
-      const el = document.getElementById('lista-servicos');
-      const ativos = SERVICOS.filter(s => s.ativo !== false);
-      
-      el.innerHTML = ativos.map(s => `
-        <div onclick="toggleServico('${s.id}')" id="srv-${s.id}" class="card-street p-3.5 rounded-2xl flex justify-between items-center cursor-pointer">
-          <div>
-            <p class="font-extrabold text-xs text-white uppercase tracking-wider">${s.nome}</p>
-            <p class="text-[10px] text-gray-400 font-semibold">${s.duracao}</p>
-          </div>
-          <span class="font-brand font-extrabold gold-gradient-text text-sm">R$ ${s.preco},00</span>
-        </div>
-      `).join('');
-    }
-
-    function toggleServico(id) {
-      if (servicosSelecionados.includes(id)) {
-        servicosSelecionados = servicosSelecionados.filter(item => item !== id);
-      } else {
-        servicosSelecionados.push(id);
-      }
-      
-      SERVICOS.forEach(s => {
-        const card = document.getElementById(`srv-${s.id}`);
-        if (card) {
-          if (servicosSelecionados.includes(s.id)) {
-            card.classList.add('card-street-active');
-          } else {
-            card.classList.remove('card-street-active');
-          }
-        }
-      });
-      calcularTotal();
-    }
-
-    function renderBarbeiros() {
-      const el = document.getElementById('lista-barbeiros');
-      el.innerHTML = BARBEIROS.map(b => `
-        <div onclick="selecionarBarbeiro('${b.id}')" id="barb-${b.id}" class="card-street p-3 rounded-2xl text-center cursor-pointer text-xs font-bold">
-          <p class="text-white">${b.nome}</p>
-        </div>
-      `).join('');
-      selecionarBarbeiro('qualquer');
-    }
-
-    function selecionarBarbeiro(id) {
-      barbeiroSelecionado = id;
-      BARBEIROS.forEach(b => {
-        const card = document.getElementById(`barb-${b.id}`);
-        if (b.id === id) {
-          card.classList.add('card-street-active');
-        } else {
-          card.classList.remove('card-street-active');
-        }
-      });
-      atualizarHorariosDisponiveis();
-    }
-
-    function atualizarHorariosDisponiveis() {
-      const dataSel = document.getElementById('select-data').value;
-      const el = document.getElementById('lista-horarios');
-      horarioSelecionado = '';
-
-      const ocupadosNaData = agendamentos.filter(a => a.data === dataSel && a.status !== 'Cancelado');
-
-      el.innerHTML = HORARIOS.map(h => {
-        let ocupado = false;
-
-        if (barbeiroSelecionado === 'gabriel') {
-          ocupado = ocupadosNaData.some(a => a.horario === h && (a.barbeiroId === 'gabriel' || a.barbeiroId === 'qualquer'));
-        } else if (barbeiroSelecionado === 'bruno') {
-          ocupado = ocupadosNaData.some(a => a.horario === h && (a.barbeiroId === 'bruno' || a.barbeiroId === 'qualquer'));
-        } else {
-          const ocupadosGabriel = ocupadosNaData.some(a => a.horario === h && (a.barbeiroId === 'gabriel' || a.barbeiroId === 'qualquer'));
-          const ocupadosBruno = ocupadosNaData.some(a => a.horario === h && (a.barbeiroId === 'bruno' || a.barbeiroId === 'qualquer'));
-          ocupado = ocupadosGabriel && ocupadosBruno;
-        }
-
-        if (ocupado) {
-          return `
-            <button disabled class="bg-red-950/30 border border-red-900/40 py-2.5 rounded-xl text-xs font-bold text-red-500/50 line-through cursor-not-allowed">
-              ${h} (Indisp.)
-            </button>
-          `;
-        } else {
-          return `
-            <button onclick="selecionarHorario('${h}')" id="hora-${h}" class="card-street py-2.5 rounded-xl text-xs font-extrabold text-gray-300">
-              ${h}
-            </button>
-          `;
-        }
-      }).join('');
-    }
-
-    function selecionarHorario(h) {
-      horarioSelecionado = h;
-      HORARIOS.forEach(hora => {
-        const btn = document.getElementById(`hora-${hora}`);
-        if (btn && !btn.disabled) {
-          if (hora === h) {
-            btn.className = "gold-button py-2.5 rounded-xl text-xs font-black text-black shadow-lg";
-          } else {
-            btn.className = "card-street py-2.5 rounded-xl text-xs font-extrabold text-gray-300";
-          }
-        }
-      });
-    }
-
-    function calcularTotal() {
-      const total = servicosSelecionados.reduce((acc, id) => {
-        const s = SERVICOS.find(item => item.id === id);
-        return acc + (s ? s.preco : 0);
-      }, 0);
-      document.getElementById('total-valor').innerText = `R$ ${total},00`;
-      return total;
-    }
-
-    function enviarAgendamento() {
-      const nome = document.getElementById('nome-cliente').value;
-      const tel = document.getElementById('tel-cliente').value;
-      const data = document.getElementById('select-data').value;
-
-      if (!nome || !tel || servicosSelecionados.length === 0 || !horarioSelecionado) {
-        alert('Selecione os serviços, um horário disponível e preencha seus dados.');
-        return;
-      }
-
-      const valorTotal = calcularTotal();
-      const barbeiroObj = BARBEIROS.find(b => b.id === barbeiroSelecionado);
-
-      const novoAgendamento = {
-        id: Date.now(),
-        cliente: nome,
-        telefone: tel,
-        barbeiro: barbeiroObj.nome,
-        barbeiroId: barbeiroObj.id,
-        data: data,
-        horario: horarioSelecionado,
-        valor: valorTotal,
-        pagamento: '-',
-        status: 'Pendente'
-      };
-
-      agendamentos.push(novoAgendamento);
-      localStorage.setItem('hm_agendamentos', JSON.stringify(agendamentos));
-
-      atualizarHorariosDisponiveis();
-
-      const msg = `🔥 *NOVO AGENDAMENTO - HM BARBER STORE*%0A%0A` +
-        `👤 *Cliente:* ${nome}%0A` +
-        `💈 *Profissional:* ${barbeiroObj.nome}%0A` +
-        `📅 *Data:* ${data} às ${horarioSelecionado}%0A` +
-        `💰 *Valor Total:* R$ ${valorTotal},00`;
-
-      window.open(`https://wa.me/5511999999999?text=${msg}`, '_blank');
-    }
-
-    /* LÓGICA DO PAINEL DE CONTROLE (DONO) */
-    function atualizarPainelLoja() {
-      const concluidos = agendamentos.filter(a => a.status === 'Concluído');
-      const faturamento = concluidos.reduce((acc, a) => acc + a.valor, 0);
-      const totalAtend = concluidos.length;
-      const ticket = totalAtend > 0 ? (faturamento / totalAtend).toFixed(2) : 0;
-
-      document.getElementById('metrica-atendimentos').innerText = totalAtend;
-      document.getElementById('metrica-faturamento').innerText = `R$ ${faturamento},00`;
-      document.getElementById('metrica-ticket').innerText = `R$ ${ticket}`;
-
-      const tbody = document.getElementById('tabela-agendamentos');
-      tbody.innerHTML = agendamentos.map(a => `
-        <tr class="${a.status === 'Cancelado' ? 'opacity-40 line-through' : ''}">
-          <td class="p-2 font-bold">${a.cliente}</td>
-          <td class="p-2">${a.barbeiro}</td>
-          <td class="p-2">${a.data} ${a.horario}</td>
-          <td class="p-2 font-bold text-amber-400">R$ ${a.valor}</td>
-          <td class="p-2 font-bold text-gray-300">${a.pagamento}</td>
-          <td class="p-2">
-            <span class="px-2 py-0.5 rounded text-[10px] font-bold ${
-              a.status === 'Concluído' ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' :
-              a.status === 'Cancelado' ? 'bg-red-950 text-red-400 border border-red-800' :
-              'bg-amber-950 text-amber-400 border border-amber-800'
-            }">${a.status}</span>
-          </td>
-          <td class="p-2 flex gap-1">
-            ${a.status === 'Pendente' ? `
-              <button onclick="concluirComPagamento(${a.id})" class="gold-button px-2 py-1 rounded text-[10px] font-black">Concluir</button>
-              <button onclick="cancelarAgendamento(${a.id})" class="bg-red-900/60 text-red-300 px-2 py-1 rounded text-[10px] font-bold">Cancelar</button>
-            ` : '-'}
-          </td>
-        </tr>
-      `).join('');
-    }
-
-    function concluirComPagamento(id) {
-      const forma = prompt('Qual foi a forma de pagamento?\n1 - Pix\n2 - Dinheiro\n3 - Cartão Débito\n4 - Cartão Crédito', '1');
-      let pagamentoTexto = 'Pix';
-      if (forma === '2') pagamentoTexto = 'Dinheiro';
-      if (forma === '3') pagamentoTexto = 'Débito';
-      if (forma === '4') pagamentoTexto = 'Crédito';
-
-      agendamentos = agendamentos.map(a => a.id === id ? {...a, status: 'Concluído', pagamento: pagamentoTexto} : a);
-      localStorage.setItem('hm_agendamentos', JSON.stringify(agendamentos));
-      atualizarPainelLoja();
-      atualizarHorariosDisponiveis();
-    }
-
-    function cancelarAgendamento(id) {
-      if (confirm('Deseja realmente cancelar este agendamento? O horário será liberado novamente.')) {
-        agendamentos = agendamentos.map(a => a.id === id ? {...a, status: 'Cancelado'} : a);
-        localStorage.setItem('hm_agendamentos', JSON.stringify(agendamentos));
-        atualizarPainelLoja();
-        atualizarHorariosDisponiveis();
-      }
-    }
-
-    /* GESTÃO DE SERVIÇOS & ALTERAÇÃO DE PREÇOS */
-    function renderGestaoServicos() {
-      const el = document.getElementById('gestao-servicos-lista');
-      el.innerHTML = SERVICOS.map(s => `
-        <div class="bg-black/50 border border-amber-500/20 p-3 rounded-xl flex justify-between items-center">
-          <div>
-            <p class="font-bold text-xs text-white">${s.nome}</p>
-            <p class="text-[10px] text-gray-400">Preço atual: <span class="text-amber-400 font-bold">R$ ${s.preco},00</span></p>
-          </div>
-          <div class="flex items-center gap-2">
-            <button onclick="alterarPrecoServico('${s.id}')" class="text-[10px] gold-button px-2.5 py-1 rounded-lg font-bold">Alterar R$</button>
-            <button onclick="toggleAtivoServico('${s.id}')" class="text-[10px] ${s.ativo !== false ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-gray-800 text-gray-500'} px-2 py-1 rounded-lg font-bold">
-              ${s.ativo !== false ? 'Ativo' : 'Oculto'}
-            </button>
-          </div>
-        </div>
-      `).join('');
-    }
-
-    function alterarPrecoServico(id) {
-      const s = SERVICOS.find(item => item.id === id);
-      const novoPreco = prompt(`Novo preço para ${s.nome} (Apenas número):`, s.preco);
-      if (novoPreco && !isNaN(novoPreco)) {
-        s.preco = parseFloat(novoPreco);
-        localStorage.setItem('hm_servicos', JSON.stringify(SERVICOS));
-        renderGestaoServicos();
-        renderServicos();
-      }
-    }
-
-    function toggleAtivoServico(id) {
-      const s = SERVICOS.find(item => item.id === id);
-      s.ativo = s.ativo === false ? true : false;
-      localStorage.setItem('hm_servicos', JSON.stringify(SERVICOS));
-      renderGestaoServicos();
-      renderServicos();
-    }
-  </script>
-</body>
-</html>
+    function salvarConfigHorarios() {
+      const ini = parseInt(document.getElementById('hora-inicio').value);
+      const fim = parseInt(document.getElementById('hora-fim').value);
+      if (ini
